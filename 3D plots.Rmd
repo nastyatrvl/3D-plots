@@ -1,0 +1,249 @@
+---
+title: "3D Plots"
+author: "Anastasia Sorokina"
+output:
+  html_document:
+    df_print: paged
+---
+
+# PLOTLY package
+
+```{r}
+library(plotly)
+```
+## Basic 3D Surface Plot
+
+```{r}
+fig <- plot_ly(z = ~volcano)
+fig <- fig %>% add_surface()
+fig
+```
+
+## 2D Kernel Density Estimation
+
+```{r}
+kd <- with(MASS::geyser, MASS::kde2d(duration, waiting, n = 50))
+fig <- plot_ly(x = kd$x, y = kd$y, z = kd$z) %>% add_surface()
+fig
+```
+
+# RGL package
+
+```{r}
+library(rgl)
+```
+
+```{r}
+data(iris)
+head(iris)
+```
+
+```{r}
+x <- sep.l <- iris$Sepal.Length
+y <- pet.l <- iris$Petal.Length
+z <- sep.w <- iris$Sepal.Width
+```
+
+```{r}
+rgl.open()
+```
+
+## Scatter plots
+
+```{r}
+rgl.points(x, y, z, color ="lightgray")
+```
+
+```{r}
+rgl.open()
+rgl.bg(color = "white") 
+rgl.points(x, y, z, color = "pink", size = 5) 
+```
+
+### Draw spheres
+
+```{r}
+rgl.open()
+rgl.bg(color = "white") 
+rgl.spheres(x, y, z, r = 0.2, color = "grey") 
+```
+
+### Add boxes
+
+```{r}
+rgl.open()
+rgl.bg(color = "white") 
+rgl.spheres(x, y, z, r = 0.2, color = "white")  
+rgl.bbox(color=c("#333377","black"), emission="#333377",
+         specular="#3333FF", shininess=5, alpha=0.8 ) 
+```
+
+# CAR package
+
+```{r}
+library(car)
+```
+
+## 3D plot with the regression plane
+
+```{r}
+scatter3d(x = sep.l, y = pet.l, z = sep.w)
+```
+
+### Points by groups
+```{r}
+scatter3d(x = sep.l, y = pet.l, z = sep.w, groups = iris$Species)
+```
+
+### Add concentration ellipsoids
+```{r}
+scatter3d(x = sep.l, y = pet.l, z = sep.w, groups = iris$Species,
+          surface=FALSE, grid = FALSE, ellipsoid = TRUE)
+```
+
+### Add text labels for the points
+```{r}
+scatter3d(x = sep.l, y = pet.l, z = sep.w, 
+          surface=FALSE, labels = rownames(iris), id.n=nrow(iris))
+```
+
+### Save images
+```{r}
+rgl.snapshot(filename = "plot.png")
+rgl.postscript("plot.pdf",fmt="pdf")
+```
+
+# plot3D package
+
+```{r}
+library(plot3D)
+```
+
+## Scatter plots
+```{r}
+scatter3D(x, y, z, bty = "g", colkey = FALSE, main ="bty= 'g'")
+```
+```{r}
+scatter3D(x, y, z, pch = 18, bty = "u", colkey = FALSE, 
+   main ="bty= 'u'", col.panel ="steelblue", expand =0.4, 
+   col.grid = "darkblue")
+```
+
+## 3D Histogram
+
+```{r}
+data(VADeaths)
+#  hist3D and ribbon3D with greyish background, rotated, rescaled,...
+hist3D(z = VADeaths, scale = FALSE, expand = 0.01, bty = "g", phi = 20,
+        col = "thistle", border = "white", shade = 0.2, ltheta = 90,
+        space = 0.3, ticktype = "detailed", d = 2)
+```
+
+### Add interactivity
+
+```{r}
+library("plot3Drgl")
+plotrgl()
+```
+
+# Explore other options
+```{r}
+library(rayshader)
+library(ggplot2)
+library(tidyverse)
+```
+## 3D Surface Plots
+
+```{r}
+rgl.open()
+gg = ggplot(diamonds, aes(x, depth)) +
+  stat_density_2d(aes(fill = stat(nlevel)), 
+                  geom = "polygon",
+                  n = 100,bins = 10,contour = TRUE) +
+  facet_wrap(clarity~.) +
+  scale_fill_viridis_c(option = "A")
+plot_gg(gg,multicore=TRUE,width=5,height=5,scale=250)
+```
+
+## 3D maps
+
+```{r}
+library(sf)
+library(viridis)
+rgl.open()
+nc = st_read(system.file("shape/nc.shp", package="sf"), quiet = TRUE)
+gg_nc = ggplot(nc) +
+  geom_sf(aes(fill = AREA)) +
+  scale_fill_viridis("Area") +
+  ggtitle("Area of counties in North Carolina") +
+  theme_bw()
+
+plot_gg(gg_nc, multicore = TRUE, width = 6 ,height=2.7, fov = 70)
+render_depth(focallength=100,focus=0.72)
+```
+
+
+### And many other options
+
+For more details: https://www.tylermw.com/3d-ggplots-with-rayshader/
+
+```{r}
+rgl.open()
+a = data.frame(x=rnorm(20000, 10, 1.9), y=rnorm(20000, 10, 1.2) )
+b = data.frame(x=rnorm(20000, 14.5, 1.9), y=rnorm(20000, 14.5, 1.9) )
+c = data.frame(x=rnorm(20000, 9.5, 1.9), y=rnorm(20000, 15.5, 1.9) )
+data = rbind(a,b,c)
+
+#Lines
+pp = ggplot(data, aes(x=x, y=y)) +
+  geom_hex(bins = 20, size = 0.5, color = "black") +
+  scale_fill_viridis_c(option = "C")
+plot_gg(pp, width = 4, height = 4, scale = 300, multicore = TRUE)
+
+#No lines
+pp_nolines = ggplot(data, aes(x=x, y=y)) +
+  geom_hex(bins = 20, size = 0) +
+  scale_fill_viridis_c(option = "C")
+plot_gg(pp_nolines, width = 4, height = 4, scale = 300, multicore = TRUE)
+```
+
+
+```{r}
+rgl.open()
+mtcars_gg = ggplot(mtcars) + 
+  geom_point(aes(x=mpg,color=cyl,y=disp),size=2) +
+  scale_color_continuous(limits=c(0,8)) +
+  ggtitle("mtcars: Displacement vs mpg vs # of cylinders") +
+  theme(title = element_text(size=8),
+        text = element_text(size=12)) 
+
+plot_gg(mtcars_gg, height=3, width=3.5, multicore=TRUE, pointcontract = 0.7, soliddepth=-200)
+```
+
+
+```{r}
+library(tidyverse)
+rgl.open()
+measles = read_csv("https://tylermw.com/data/measles_country_2011_2019.csv")
+melt_measles = reshape2::melt(measles, id.vars = c("Year", "Country", "Region", "ISO3"))
+melt_measles$Month = melt_measles$variable
+melt_measles$cases = melt_measles$value
+melt_measles %>% 
+  group_by(Year, Month) %>%
+  summarize(totalcases = sum(cases,na.rm = TRUE)) %>% 
+  mutate(totalcases = ifelse(Year == 2019 & !(Month %in% c("January","February","March")), NA, totalcases)) %>%
+  ggplot() + 
+  geom_tile(aes(x=Year, y=Month, fill=totalcases,color=totalcases),size=1,color="black") + 
+  scale_x_continuous("Year", expand=c(0,0), breaks = seq(2011,2019,1)) +
+  scale_y_discrete("Month", expand=c(0,0)) +
+  scale_fill_viridis("Total\nCases") +
+  ggtitle("Reported Worldwide Measles Cases") +
+  labs(caption = "Data Source: WHO") +
+  theme(axis.text = element_text(size = 12),
+        title = element_text(size = 12,face="bold"),
+        panel.border= element_rect(size=2,color="black",fill=NA)) -> 
+measles_gg
+
+plot_gg(measles_gg, multicore = TRUE, width = 6, height = 5.5, scale = 300,shadowcolor = "#3a4f70")
+```
+
